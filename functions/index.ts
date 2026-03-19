@@ -66,15 +66,14 @@ app.notFound(async (c) => {
         });
 
         if (res.ok) {
-            const contentType = res.headers.get('Content-Type')!;
-            const body = await res.arrayBuffer();
+            const headers = new Headers(res.headers);
+            if (!headers.has('Cache-Control')) {
+                headers.set('Cache-Control', 'public, max-age=3600');
+            }
 
-            return new Response(body, {
+            return new Response(res.body, {
                 status: res.status,
-                headers: {
-                    'Content-Type': contentType,
-                    'Cache-Control': 'public, max-age=3600',
-                },
+                headers,
             });
         }
     } catch (error) {

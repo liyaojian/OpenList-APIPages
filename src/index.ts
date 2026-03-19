@@ -12,7 +12,7 @@ import * as quark from './driver/quarkpan_oa';
 
 export type Bindings = {
     // 基本配置 ================================
-    MAIN_URLS: string, PROXY_API: string | null,
+    MAIN_URLS: string, PROXY_API: string,
     // 密钥参数 ================================
     baiduyun_ext: string,
     onedrive_uid: string, onedrive_key: string,
@@ -22,6 +22,7 @@ export type Bindings = {
     googleui_uid: string, googleui_key: string,
     yandexui_uid: string, yandexui_key: string,
     dropboxs_uid: string, dropboxs_key: string,
+    quarkpan_uid: string, quarkpan_key: string,
 }
 
 export const app = new Hono<{ Bindings: Bindings }>()

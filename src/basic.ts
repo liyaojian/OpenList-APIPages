@@ -1,44 +1,52 @@
 import { config } from 'dotenv'
+import { serve } from '@hono/node-server'
+import { serveStatic } from '@hono/node-server/serve-static'
+import { Hono } from 'hono'
+import { app as apiApp, type Bindings } from './index'
+
 config()
 
-import { serveStatic } from '@hono/node-server/serve-static'
-import { serve } from '@hono/node-server'
-
-// 1. 创建主应用实例
-const app = new Hono()
-
-// 2. 优先添加环境设置中间件
-app.use('*', async(c, next)=>{
-    c.env = {
-        ...(c.env || {}),
-        MAIN_URLS: process.env.MAIN_URLS || '',
-        baiduyun_ext: process.env.baiduyun_ext || '',
-        onedrive_uid: process.env.onedrive_uid || '',
-        onedrive_key: process.env.onedrive_key || '',
-        alicloud_uid: process.env.alicloud_uid || '',
-        alicloud_key: process.env.alicloud_key || '',
-        baiduyun_uid: process.env.baiduyun_uid || '',
-        baiduyun_key: process.env.baiduyun_key || '',
-        cloud115_uid: process.env.cloud115_uid || '',
-        cloud115_key: process.env.cloud115_key || '',
-        googleui_uid: process.env.googleui_uid || '',
-        googleui_key: process.env.googleui_key || '',
-        yandexui_uid: process.env.yandexui_uid || '',
-        yandexui_key: process.env.yandexui_key || '',
-        dropboxs_uid: process.env.dropboxs_uid || '',
-        dropboxs_key: process.env.dropboxs_key || ''
+const readEnv = (...keys: string[]): string => {
+    for (const key of keys) {
+        const value = process.env[key];
+        if (value !== undefined && value !== '') {
+            return value;
+        }
     }
+    return '';
+}
+
+const runtimeBindings: Readonly<Bindings> = Object.freeze({
+    MAIN_URLS: readEnv('MAIN_URLS', 'OPLIST_MAIN_URLS'),
+    PROXY_API: readEnv('PROXY_API', 'OPLIST_PROXY_API'),
+    baiduyun_ext: readEnv('baiduyun_ext', 'OPLIST_BAIDUYUN_EXT'),
+    onedrive_uid: readEnv('onedrive_uid', 'OPLIST_ONEDRIVE_UID'),
+    onedrive_key: readEnv('onedrive_key', 'OPLIST_ONEDRIVE_KEY'),
+    alicloud_uid: readEnv('alicloud_uid', 'OPLIST_ALICLOUD_UID'),
+    alicloud_key: readEnv('alicloud_key', 'OPLIST_ALICLOUD_KEY'),
+    baiduyun_uid: readEnv('baiduyun_uid', 'OPLIST_BAIDUYUN_UID'),
+    baiduyun_key: readEnv('baiduyun_key', 'OPLIST_BAIDUYUN_KEY'),
+    cloud115_uid: readEnv('cloud115_uid', 'OPLIST_CLOUD115_UID'),
+    cloud115_key: readEnv('cloud115_key', 'OPLIST_CLOUD115_KEY'),
+    googleui_uid: readEnv('googleui_uid', 'OPLIST_GOOGLEUI_UID'),
+    googleui_key: readEnv('googleui_key', 'OPLIST_GOOGLEUI_KEY'),
+    yandexui_uid: readEnv('yandexui_uid', 'OPLIST_YANDEXUI_UID'),
+    yandexui_key: readEnv('yandexui_key', 'OPLIST_YANDEXUI_KEY'),
+    dropboxs_uid: readEnv('dropboxs_uid', 'OPLIST_DROPBOXS_UID'),
+    dropboxs_key: readEnv('dropboxs_key', 'OPLIST_DROPBOXS_KEY'),
+    quarkpan_uid: readEnv('quarkpan_uid', 'OPLIST_QUARKPAN_UID'),
+    quarkpan_key: readEnv('quarkpan_key', 'OPLIST_QUARKPAN_KEY'),
+})
+
+const app = new Hono<{ Bindings: Bindings }>()
+
+app.use('*', async(c, next)=>{
+    c.env = runtimeBindings as typeof c.env
     await next()
 })
 
-// 3. 延迟导入路由（必须在中间件之后导入）
-import * as index from './index'
-import { Hono } from 'hono'
+app.route('/', apiApp)
 
-// 4. 挂载路由
-app.route('/', index.app)
-
-// 静态文件服务
 app.use('*', serveStatic({root: 'public/'}))
 
 serve({

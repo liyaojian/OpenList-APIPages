@@ -1,12 +1,21 @@
-FROM node:lts-alpine
+FROM node:lts-alpine AS builder
 WORKDIR /app
-RUN npm install -g webpack
-COPY .env.example .env
-COPY entrypoint-lite.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
+
 COPY package*.json ./
+RUN npm ci
+
+COPY tsconfig.json webpack.config.cjs ./
 COPY public ./public
 COPY src ./src
-RUN npm install
+RUN npm run build-js
+
+FROM node:lts-alpine AS runtime
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/public ./public
+
 EXPOSE 3000
-ENTRYPOINT ["sh","/app/entrypoint.sh"]
+CMD ["node", "dist/bundle.js"]

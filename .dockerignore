@@ -1,0 +1,9 @@
+.git
+.github
+dist
+node_modules
+npm-debug.log
+.DS_Store
+.env
+.wrangler
+public/static/fonts.woff2

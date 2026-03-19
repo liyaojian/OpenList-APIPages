@@ -1,12 +1,21 @@
-FROM node:lts
+FROM node:lts-bookworm-slim AS builder
 WORKDIR /app
-RUN npm install -g wrangler
-COPY wrangler.example.jsonc wrangler.jsonc
-COPY entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
+
 COPY package*.json ./
+RUN npm ci
+
+COPY tsconfig.json webpack.config.cjs ./
 COPY public ./public
 COPY src ./src
-RUN npm install
+RUN npm run build-js
+
+FROM node:lts-bookworm-slim AS runtime
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/public ./public
+
 EXPOSE 3000
-ENTRYPOINT ["sh","/app/entrypoint.sh"]
+CMD ["node", "dist/bundle.js"]
